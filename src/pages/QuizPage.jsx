@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ReactMic } from "react-mic";
-import quizQuestions from "../data/questions";
+import questions from "../data/questions";
 import styles from "./QuizPage.module.css";
 
 const QuizPage = () => {
@@ -12,11 +12,11 @@ const QuizPage = () => {
 
 	useEffect(() => {
 		const timer = setInterval(() => {
-			if (!quizCompleted) setTimeElapsed((prev) => prev + 1);
+			setTimeElapsed((prev) => prev + 1);
 		}, 1000);
 
 		return () => clearInterval(timer);
-	}, [quizCompleted]);
+	}, []);
 
 	const handleStartRecording = () => {
 		setIsRecording(true);
@@ -30,20 +30,22 @@ const QuizPage = () => {
 	};
 
 	const handleNext = () => {
-		if (currentQuestion === quizQuestions.length - 1) {
+		if (currentQuestion === questions.length - 1) {
 			setQuizCompleted(true);
+			setTimeElapsed(0); // Stop the timer
 		} else {
 			setCurrentQuestion((prev) => prev + 1);
 		}
 	};
 
 	const handleSkip = () => {
-		if (currentQuestion === quizQuestions.length - 1) {
+		if (currentQuestion === questions.length - 1) {
 			setQuizCompleted(true);
+			setTimeElapsed(0); // Stop the timer
 		} else {
 			setRecordedBlobs((prevBlobs) => {
 				const updatedBlobs = [...prevBlobs];
-				updatedBlobs[currentQuestion] = null;
+				updatedBlobs[currentQuestion] = "skipped";
 				return updatedBlobs;
 			});
 			setCurrentQuestion((prev) => prev + 1);
@@ -58,41 +60,51 @@ const QuizPage = () => {
 		});
 	};
 
+	useEffect(() => {
+		console.log(recordedBlobs);
+	}, [recordedBlobs]);
+
 	return (
 		<div className={styles.container}>
-			<div>
+			<div className={styles.timer}>
 				<span>Time Elapsed: {timeElapsed} seconds</span>
 			</div>
 			{!quizCompleted && (
 				<div>
-					<div className={styles.questionMarkers}>
-						{quizQuestions.map((q, index) => (
+					<div className={styles.questionTimeline}>
+						{questions.map((q, index) => (
 							<span
 								key={q.id}
-								className={
-									currentQuestion === index
-										? styles.currentQuestion
-										: recordedBlobs[index]
-										? styles.answeredQuestion
-										: styles.unansweredQuestion
-								}
-								onClick={() => setCurrentQuestion(index)}
+								style={{
+									margin: "0 5px",
+									padding: "5px",
+									border: "1px solid",
+									backgroundColor:
+										index === currentQuestion
+											? "yellow"
+											: recordedBlobs[index] === "skipped"
+											? "yellow"
+											: recordedBlobs[index]
+											? "green"
+											: "white",
+								}}
 							>
 								{index + 1}
 							</span>
 						))}
 					</div>
-					<div className={styles.question}>
-						<h2>{quizQuestions[currentQuestion].text}</h2>
-						{!recordedBlobs[currentQuestion] ? (
+					<div className={styles.questionContainer}>
+						<h2>{questions[currentQuestion].text}</h2>
+						{!recordedBlobs[currentQuestion] ||
+						recordedBlobs[currentQuestion] === "skipped" ? (
 							<div>
 								<ReactMic
 									record={isRecording}
-									className={styles.soundWave}
+									className="sound-wave"
 									onStop={handleStopRecording}
 									mimeType="audio/webm"
 								/>
-								<div className={styles.buttons}>
+								<div>
 									{isRecording ? (
 										<button onClick={() => setIsRecording(false)}>
 											Stop Recording
@@ -113,37 +125,29 @@ const QuizPage = () => {
 									/>
 									Your browser does not support the audio element.
 								</audio>
-								<div className={styles.buttons}>
-									<button onClick={handleReRecord}>Re-record</button>
-								</div>
+								<button onClick={handleReRecord}>Re-record</button>
 							</div>
 						)}
-						<div className={styles.buttons}>
-							<button onClick={handleNext} disabled={isRecording}>
-								Next
-							</button>
-							<button onClick={handleSkip} disabled={isRecording}>
-								Skip
-							</button>
-						</div>
+						<button onClick={handleNext}>Next</button>
+						<button onClick={handleSkip}>Skip</button>
 					</div>
 				</div>
 			)}
 			{quizCompleted && (
-				<div className={styles.quizCompleted}>
+				<div className={styles.completedContainer}>
 					<h2>Quiz Completed!</h2>
 					<button onClick={() => window.location.reload()}>Restart Quiz</button>
 					<div>
 						{recordedBlobs.map((blob, index) => (
 							<div key={index}>
-								{blob ? (
+								{blob && blob !== "skipped" && (
 									<audio controls>
 										<source src={URL.createObjectURL(blob)} type="audio/webm" />
 										Your browser does not support the audio element.
 									</audio>
-								) : (
-									<p>Question {index + 1} was skipped</p>
 								)}
+								{blob === "skipped" && <p>Question {index + 1} was skipped</p>}
+								{!blob && <p>Question {index + 1} was not attempted</p>}
 							</div>
 						))}
 					</div>

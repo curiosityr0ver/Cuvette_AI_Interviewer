@@ -1,64 +1,46 @@
 .container {
-    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
 }
 
-.questionMarkers {
-    margin-bottom: 10px;
-}
-
-.questionMarkers span {
-    margin: 0 5px;
-    padding: 5px;
-    border: 1px solid;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.currentQuestion {
-    background-color: #ffeb3b;
-}
-
-.answeredQuestion {
-    background-color: #4caf50;
-}
-
-.unansweredQuestion {
-    background-color: #f44336;
-}
-
-.question {
+.timer {
     margin-bottom: 20px;
 }
 
-.soundWave {
-    margin-bottom: 10px;
-}
-
-.buttons {
+.questionTimeline {
     display: flex;
-    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.buttons button {
+.questionContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.completedContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+button {
+    margin: 10px;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
     border: none;
     border-radius: 5px;
-    outline: none;
+    transition: background-color 0.3s;
 }
 
-.buttons button:hover {
+button:hover {
     background-color: #ddd;
 }
 
-.buttons button:disabled {
+button:active {
     background-color: #ccc;
-    cursor: not-allowed;
-}
-
-.quizCompleted {
-    margin-top: 20px;
-    padding: 10px;
-    background: #e0e0e0;
 }
