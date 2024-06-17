@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useReactMediaRecorder } from "react-media-recorder";
 import questions from "../data/questions"; // Importing questions from the data directory
-import { ReactMic } from "react-mic";
 import axios from "axios";
 import styles from "./QuizPage.module.css";
 
 const QuizPage = () => {
 	const [currentQuestion, setCurrentQuestion] = useState(0);
 	const [timeElapsed, setTimeElapsed] = useState(0);
-	const [isRecording, setIsRecording] = useState(false);
 	const [recordedBlobs, setRecordedBlobs] = useState([]);
 	const [quizCompleted, setQuizCompleted] = useState(false);
+
+	const { status, startRecording, stopRecording, mediaBlobUrl } =
+		useReactMediaRecorder({ audio: true });
 
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -20,15 +22,24 @@ const QuizPage = () => {
 	}, []);
 
 	const handleStartRecording = () => {
-		setIsRecording(true);
+		startRecording();
 	};
 
-	const handleStopRecording = (recordedBlob) => {
-		setIsRecording(false);
-		const updatedBlobs = [...recordedBlobs];
-		updatedBlobs[currentQuestion] = recordedBlob.blob;
-		setRecordedBlobs(updatedBlobs);
+	const handleStopRecording = async () => {
+		stopRecording();
 	};
+
+	useEffect(() => {
+		if (mediaBlobUrl) {
+			fetch(mediaBlobUrl)
+				.then((res) => res.blob())
+				.then((blob) => {
+					const updatedBlobs = [...recordedBlobs];
+					updatedBlobs[currentQuestion] = blob;
+					setRecordedBlobs(updatedBlobs);
+				});
+		}
+	}, [mediaBlobUrl]);
 
 	const handleNext = () => {
 		if (currentQuestion === questions.length - 1) {
@@ -59,7 +70,7 @@ const QuizPage = () => {
 			updatedBlobs[currentQuestion] = null;
 			return updatedBlobs;
 		});
-		handleStartRecording(); // Automatically start recording again
+		startRecording(); // Automatically start recording again
 	};
 
 	const submitQuiz = async () => {
@@ -127,15 +138,9 @@ const QuizPage = () => {
 							{!recordedBlobs[currentQuestion] ||
 							recordedBlobs[currentQuestion] === "skipped" ? (
 								<div>
-									<ReactMic
-										record={isRecording}
-										className="sound-wave"
-										onStop={handleStopRecording}
-										mimeType="audio/webm"
-									/>
 									<div>
-										{isRecording ? (
-											<button onClick={() => setIsRecording(false)}>
+										{status === "recording" ? (
+											<button onClick={handleStopRecording}>
 												Stop Recording
 											</button>
 										) : (
