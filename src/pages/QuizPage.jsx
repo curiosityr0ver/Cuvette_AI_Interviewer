@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import questions from "../data/questions"; // Importing questions from the new directory
 import { ReactMic } from "react-mic";
-import questions from "../data/questions";
+import axios from "axios";
 import styles from "./QuizPage.module.css";
 
 const QuizPage = () => {
@@ -32,7 +33,8 @@ const QuizPage = () => {
 	const handleNext = () => {
 		if (currentQuestion === questions.length - 1) {
 			setQuizCompleted(true);
-			setTimeElapsed(0); // Stop the timer
+			clearInterval(timeElapsed); // Stop the timer
+			submitQuiz();
 		} else {
 			setCurrentQuestion((prev) => prev + 1);
 		}
@@ -41,7 +43,8 @@ const QuizPage = () => {
 	const handleSkip = () => {
 		if (currentQuestion === questions.length - 1) {
 			setQuizCompleted(true);
-			setTimeElapsed(0); // Stop the timer
+			clearInterval(timeElapsed); // Stop the timer
+			submitQuiz();
 		} else {
 			setRecordedBlobs((prevBlobs) => {
 				const updatedBlobs = [...prevBlobs];
@@ -58,6 +61,33 @@ const QuizPage = () => {
 			updatedBlobs[currentQuestion] = null;
 			return updatedBlobs;
 		});
+		handleStartRecording(); // Automatically start recording again
+	};
+
+	const submitQuiz = async () => {
+		const formData = new FormData();
+		recordedBlobs.forEach((blob, index) => {
+			if (blob && blob !== "skipped") {
+				formData.append(
+					`question_${index + 1}`,
+					blob,
+					`question_${index + 1}.webm`
+				);
+			} else {
+				formData.append(`question_${index + 1}`, "skipped");
+			}
+		});
+
+		try {
+			const response = await axios.post("/api/evaluation", formData, {
+				headers: {
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			console.log("Submission successful:", response.data);
+		} catch (error) {
+			console.error("Error submitting quiz:", error);
+		}
 	};
 
 	useEffect(() => {
@@ -75,19 +105,15 @@ const QuizPage = () => {
 						{questions.map((q, index) => (
 							<span
 								key={q.id}
-								style={{
-									margin: "0 5px",
-									padding: "5px",
-									border: "1px solid",
-									backgroundColor:
-										index === currentQuestion
-											? "yellow"
-											: recordedBlobs[index] === "skipped"
-											? "yellow"
-											: recordedBlobs[index]
-											? "green"
-											: "white",
-								}}
+								className={
+									index === currentQuestion
+										? styles.currentQuestion
+										: recordedBlobs[index] === "skipped"
+										? styles.skippedQuestion
+										: recordedBlobs[index]
+										? styles.answeredQuestion
+										: styles.notAttemptedQuestion
+								}
 							>
 								{index + 1}
 							</span>
@@ -95,39 +121,41 @@ const QuizPage = () => {
 					</div>
 					<div className={styles.questionContainer}>
 						<h2>{questions[currentQuestion].text}</h2>
-						{!recordedBlobs[currentQuestion] ||
-						recordedBlobs[currentQuestion] === "skipped" ? (
-							<div>
-								<ReactMic
-									record={isRecording}
-									className="sound-wave"
-									onStop={handleStopRecording}
-									mimeType="audio/webm"
-								/>
+						<div className={styles.recordingControls}>
+							{!recordedBlobs[currentQuestion] ||
+							recordedBlobs[currentQuestion] === "skipped" ? (
 								<div>
-									{isRecording ? (
-										<button onClick={() => setIsRecording(false)}>
-											Stop Recording
-										</button>
-									) : (
-										<button onClick={handleStartRecording}>
-											Start Recording
-										</button>
-									)}
-								</div>
-							</div>
-						) : (
-							<div>
-								<audio controls>
-									<source
-										src={URL.createObjectURL(recordedBlobs[currentQuestion])}
-										type="audio/webm"
+									<ReactMic
+										record={isRecording}
+										className="sound-wave"
+										onStop={handleStopRecording}
+										mimeType="audio/webm"
 									/>
-									Your browser does not support the audio element.
-								</audio>
-								<button onClick={handleReRecord}>Re-record</button>
-							</div>
-						)}
+									<div>
+										{isRecording ? (
+											<button onClick={() => setIsRecording(false)}>
+												Stop Recording
+											</button>
+										) : (
+											<button onClick={handleStartRecording}>
+												Start Recording
+											</button>
+										)}
+									</div>
+								</div>
+							) : (
+								<div>
+									<audio controls>
+										<source
+											src={URL.createObjectURL(recordedBlobs[currentQuestion])}
+											type="audio/webm"
+										/>
+										Your browser does not support the audio element.
+									</audio>
+									<button onClick={handleReRecord}>Re-record</button>
+								</div>
+							)}
+						</div>
 						<button onClick={handleNext}>Next</button>
 						<button onClick={handleSkip}>Skip</button>
 					</div>
@@ -141,10 +169,15 @@ const QuizPage = () => {
 						{recordedBlobs.map((blob, index) => (
 							<div key={index}>
 								{blob && blob !== "skipped" && (
-									<audio controls>
-										<source src={URL.createObjectURL(blob)} type="audio/webm" />
-										Your browser does not support the audio element.
-									</audio>
+									<div>
+										<audio controls>
+											<source
+												src={URL.createObjectURL(blob)}
+												type="audio/webm"
+											/>
+											Your browser does not support the audio element.
+										</audio>
+									</div>
 								)}
 								{blob === "skipped" && <p>Question {index + 1} was skipped</p>}
 								{!blob && <p>Question {index + 1} was not attempted</p>}
