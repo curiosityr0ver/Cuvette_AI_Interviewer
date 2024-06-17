@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import questions from "../data/questions"; // Importing questions from the new directory
+import { useState, useEffect } from "react";
+import questions from "../data/questions"; // Importing questions from the data directory
 import { ReactMic } from "react-mic";
 import axios from "axios";
 import styles from "./QuizPage.module.css";
@@ -33,7 +33,6 @@ const QuizPage = () => {
 	const handleNext = () => {
 		if (currentQuestion === questions.length - 1) {
 			setQuizCompleted(true);
-			clearInterval(timeElapsed); // Stop the timer
 			submitQuiz();
 		} else {
 			setCurrentQuestion((prev) => prev + 1);
@@ -43,7 +42,6 @@ const QuizPage = () => {
 	const handleSkip = () => {
 		if (currentQuestion === questions.length - 1) {
 			setQuizCompleted(true);
-			clearInterval(timeElapsed); // Stop the timer
 			submitQuiz();
 		} else {
 			setRecordedBlobs((prevBlobs) => {
@@ -79,11 +77,15 @@ const QuizPage = () => {
 		});
 
 		try {
-			const response = await axios.post("/api/evaluation", formData, {
-				headers: {
-					"Content-Type": "multipart/form-data",
-				},
-			});
+			const response = await axios.post(
+				"http://localhost:5000/api/evaluation",
+				formData,
+				{
+					headers: {
+						"Content-Type": "multipart/form-data",
+					},
+				}
+			);
 			console.log("Submission successful:", response.data);
 		} catch (error) {
 			console.error("Error submitting quiz:", error);
