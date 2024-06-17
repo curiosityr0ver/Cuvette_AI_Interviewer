@@ -1,6 +1,6 @@
-// src/components/LandingPage.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import styles from "./LandingPage.module.css";
 
 const LandingPage = () => {
 	const [formData, setFormData] = useState({
@@ -10,6 +10,8 @@ const LandingPage = () => {
 		linkedin: "",
 		resume: null,
 	});
+
+	const [error, setError] = useState("");
 
 	const navigate = useNavigate();
 
@@ -24,20 +26,25 @@ const LandingPage = () => {
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		// Here, you can handle the form submission (e.g., send data to the server)
-		navigate("/quiz");
+		if (!formData.linkedin && !formData.resume) {
+			setError("Please provide either a LinkedIn profile or a resume.");
+		} else {
+			setError("");
+			navigate("/quiz");
+		}
 	};
 
 	return (
-		<div>
+		<div className={styles.container}>
 			<h1>Enter Your Details</h1>
-			<form onSubmit={handleSubmit}>
+			<form onSubmit={handleSubmit} className={styles.form}>
 				<input
 					type="email"
 					name="email"
 					placeholder="Email"
 					onChange={handleChange}
 					required
+					className={styles.input}
 				/>
 				<input
 					type="tel"
@@ -45,6 +52,7 @@ const LandingPage = () => {
 					placeholder="Phone"
 					onChange={handleChange}
 					required
+					className={styles.input}
 				/>
 				<input
 					type="text"
@@ -52,22 +60,30 @@ const LandingPage = () => {
 					placeholder="Full Name"
 					onChange={handleChange}
 					required
+					className={styles.input}
 				/>
 				<input
 					type="url"
 					name="linkedin"
 					placeholder="LinkedIn Profile"
 					onChange={handleChange}
-					required
+					className={styles.input}
 				/>
-				<input
-					type="file"
-					name="resume"
-					accept="application/pdf"
-					onChange={handleChange}
-					required
-				/>
-				<button type="submit">Submit</button>
+				<div className={styles.orSeparator}>OR</div>
+				<label className={styles.fileLabel}>
+					Upload Resume (PDF):
+					<input
+						type="file"
+						name="resume"
+						accept="application/pdf"
+						onChange={handleChange}
+						className={styles.inputFile}
+					/>
+				</label>
+				{error && <div className={styles.error}>{error}</div>}
+				<button type="submit" className={styles.submitButton}>
+					Submit
+				</button>
 			</form>
 		</div>
 	);
